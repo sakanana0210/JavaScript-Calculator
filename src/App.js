@@ -38,7 +38,7 @@ const Calculator = () => {
         return;
       }
       
-      if (input.toString().length>12 || formula.length>31){
+      if (input.toString().length>12 || formula.length>28){
         newInput = "999999999999";
         newFormula = "Exceeded the maximum!"
         dispatch({ type: "UPDATE_INPUT", newFormula, newInput});
@@ -52,18 +52,27 @@ const Calculator = () => {
       if (formula === "" && (e.target.value === "+" || e.target.value === "*" || e.target.value === "/")){
         newFormula = formula;
         newInput = e.target.value;
-      } else if ((formula === "" || formula === "0") && e.target.value !== "."){
+      } else if ((formula === "") && e.target.value !== "."){
         newInput = e.target.value;
         newFormula = e.target.value;
       } else if((formula === "" || formula === "0") && e.target.value === "."){
         newInput = "0.";
         newFormula = "0.";
+      }  else if (input === "0" && e.target.value === "."){
+        newInput += e.target.value;
+        newFormula += e.target.value;
       } else if (input === "0" && e.target.value === "0") {
         newInput = "0";
         newFormula = formula;
-      } else if (input === "0" && e.target.value !== "."){
+      } else if (input === "0" && e.target.value !== "0" && (e.target.value === "-" || e.target.value === "+" || e.target.value === "*" || e.target.value === "/")) {
+        newInput = e.target.value;
+        newFormula += e.target.value;
+      } else if (input === "0" && e.target.value !== "0" && (e.target.value !== "." || e.target.value !== "+" || e.target.value !== "*" || e.target.value !== "/")) {
         newInput = e.target.value;
         newFormula = newFormula.slice(0, -1);
+        newFormula += e.target.value;
+      } else if (input === "0" && e.target.value !== "."){
+        newInput = e.target.value;
         newFormula += e.target.value;
       } else if (formula.slice(-1) === "-" && (formula.slice(-2, -1) === "+" || formula.slice(-2, -1) === "*" || formula.slice(-2, -1) === "/") && (e.target.value === "+" || e.target.value === "*" || e.target.value === "/")){
         newFormula = newFormula.slice(0, -1);
@@ -113,40 +122,52 @@ const Calculator = () => {
       let newFormula = formula;
       let result;
       let newInput
-
-      if (formula === "Exceeded the maximum!"){
-        return;
-      }
-      
-      if (formula.includes("=")){
-        return;
-      } else if(formula.slice(-1) === "-" || formula.slice(-1) === "+" || formula.slice(-1) === "*" || formula.slice(-1) === "/" ) {
-        newFormula = formula.slice(0, -1);
-        //result = eval(newFormula);
-        result = math.evaluate(newFormula);
-        if(result>"999999999999"){
-          newInput = "999999999999";
-          newFormula = "Exceeded the maximum!"
-          dispatch({ type: "RESULT", newFormula, newInput});
+      try{
+        if (formula === "Exceeded the maximum!"){
           return;
         }
-        newFormula += "=";
-        newFormula += result;
-        newInput = result;
-        dispatch({ type: "RESULT", newFormula, newInput});
-      } else {
-        result = math.evaluate(newFormula);
-        if(result>"999999999999"){
-          newInput = "999999999999";
-          newFormula = "Exceeded the maximum!"
-          dispatch({ type: "RESULT", newFormula, newInput});
+        
+        if (formula.includes("=")){
           return;
-        } else if (result.toString().length>12){
-          result = result.toString().slice(0, 12);
+        } else if(formula.slice(-1) === "-" || formula.slice(-1) === "+" || formula.slice(-1) === "*" || formula.slice(-1) === "/" ) {
+          newFormula = formula.slice(0, -1);
+          result = math.evaluate(newFormula).toFixed(8);
+          if(result>"999999999999"){
+            newInput = "999999999999";
+            newFormula = "Exceeded the maximum!"
+            dispatch({ type: "RESULT", newFormula, newInput});
+            return;
+          }
+          newFormula += "=";
+          result = result.replace(/(\.\d*?)0+$/, "$1");
+          if(result.toString().slice(-1) === "."){
+            result = result.slice(0, -1);
+          }
+          newFormula += result;
+          newInput = result;
+          dispatch({ type: "RESULT", newFormula, newInput});
+        } else {
+          result = math.evaluate(newFormula).toFixed(8);
+          if(result>"999999999999"){
+            newInput = "999999999999";
+            newFormula = "Exceeded the maximum!"
+            dispatch({ type: "RESULT", newFormula, newInput});
+            return;
+          } else if (result.toString().length>12){
+            result = result.toString().slice(0, 12);
+          }
+          newFormula += "=";
+          result=result.replace(/(\.\d*?)0+$/, "$1");
+          if(result.toString().slice(-1) === "."){
+            result = result.slice(0, -1);
+          }
+          newFormula += result;
+          newInput = result;
+          dispatch({ type: "RESULT", newFormula, newInput});
         }
-        newFormula += "=";
-        newFormula += result;
-        newInput = result;
+      }catch (error) {
+        newFormula = "Error";
+        newInput = "Press AC";
         dispatch({ type: "RESULT", newFormula, newInput});
       }
     };
